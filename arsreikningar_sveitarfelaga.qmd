@@ -277,6 +277,48 @@ ggsave(plot = p,
        width = 8, height = 0.4 * 8, scale = 2, bg = "white")
 ```
 
+```{r, fig.asp = 0.4, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_),
+           skuldaaukning = heildarskuldir / heildarskuldir[ar == 2010]) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = skuldaaukning,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y ,
+                         sveitarfelag == "Kópavogsbær" ~ y,
+                         sveitarfelag == "Garðabær" ~ y,
+                         sveitarfelag == "Reykjavíkurborg" ~ y,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, skuldaaukning, col = sveitarfelag)) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(NA, 2022)) +
+    scale_y_continuous(breaks = c(range(plot_dat$skuldaaukning), 1, 1.25, 1.5, 2, 2.5, 3), 
+                       labels = label_percent()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2010",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "skuldaaukning_2010.png",
+       width = 8, height = 0.4 * 8, scale = 2, bg = "white")
+```
+
 
 ```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
 plot_dat <- d |> 
