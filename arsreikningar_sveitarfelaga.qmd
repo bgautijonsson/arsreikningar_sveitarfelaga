@@ -424,7 +424,7 @@ plot_dat <- d |>
                          TRUE ~ y)) |> 
     filter(ar >= 2010)
 
-plot_dat |> 
+p <- plot_dat |> 
     ggplot(aes(ar, rekstrarnidurstada_hlutf, col = sveitarfelag)) +
     geom_hline(yintercept = 0, lty = 2) +
     geom_line() +
@@ -443,4 +443,10 @@ plot_dat |>
          y = NULL,
          title = "Rekstrarniðurstaða sveitarfélaga sem hlutfall af tekjum",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "rekstur_hlutf_tekjur.png",
+       width = 8, height = 0.5 * 8, scale = 2, bg = "white")
 ```
