@@ -1,0 +1,404 @@
+---
+title: "Ársreikningar Sveitarfélaga"
+author: 
+    -   name: "Brynjólfur Gauti Guðrúnar Jónsson"
+        url: "https://twitter.com/bgautijonsson"
+        affiliation: "Tölfræði, Raunvísindadeild Háskóla Íslands"
+        affiliation-url: "https://www.hi.is/tolfraedi_0"
+date: today
+format: 
+    html:
+        code-fold: true
+        toc: true
+        toc-location: right
+        toc-title: Efnisyfirlit
+editor: source
+theme: flatly
+title-block-banner: true
+standalone: true
+self-contained: true
+---
+
+
+```{r}
+#| include: false
+
+library(cowplot)
+library(tidyverse)
+library(scales)
+library(pxweb)
+library(ggthemes)
+library(kableExtra)
+library(gganimate)
+library(lubridate)
+library(geomtextpath)
+library(ggtext)
+library(here)
+library(readxl)
+library(janitor)
+```
+
+
+```{r}
+efnahagur <- read_excel("net-efnahagsreikningur.xlsx", skip = 4) |> 
+    clean_names() |> 
+    fill(ar, sveitarfelag, hluti, tegund3) |> 
+    drop_na(tegund2) |> 
+    mutate(ar = parse_number(ar),
+           sveitarfelag = str_sub(sveitarfelag, start = 6))
+```
+
+```{r}
+rekstur <- read_excel("net-rekstrarreikningur.xlsx", skip = 4) |> 
+    clean_names() |> 
+    fill(ar, sveitarfelag, hluti, tegund2) |> 
+    mutate(ar = parse_number(ar),
+           sveitarfelag = str_sub(sveitarfelag, start = 6))
+```
+
+```{r}
+reykjavik_2021 <- tibble(
+    ar = 2021,
+    sveitarfelag = "Reykjavíkurborg",
+    heildarskuldir = 144585281,
+    eignir = 236480058,
+    tekjur = 142266419,
+    gjold = 138232694 + 6528867 + 1354457,
+    eigid_fe = 91894777,
+    veltufjarmunir = 36501660,
+    skammtimaskuldir = 25110092,
+)
+
+gardabaer_2021 <- tibble(
+    ar = 2021,
+    sveitarfelag = "Garðabær",
+    heildarskuldir = 21879430,
+    eignir = 38518069,
+    tekjur = 19134280,
+    gjold = 17319198 + 999523 + 875488,
+    eigid_fe = 16638638,
+    veltufjarmunir = 3775414,
+    skammtimaskuldir = 25110092,
+)
+
+kopavogur_2021 <- tibble(
+    ar = 2021,
+    sveitarfelag = "Kópavogsbær",
+    heildarskuldir = 42854489,
+    eignir = 63179897,
+    tekjur = 38124393,
+    gjold =  35123789 + 1423093 + 1553624,
+    eigid_fe = 20325407,
+    veltufjarmunir = 6107301,
+    skammtimaskuldir = 9487502,
+)
+
+hafnarfjordur_2021 <- tibble(
+    ar = 2021,
+    sveitarfelag = "Hafnarfjarðarkaupstaður",
+    heildarskuldir = 46306203,
+    eignir = 55056370,
+    tekjur = 31226347,
+    gjold =  30355042 + 853169 + 1497709,
+    eigid_fe = 8750167,
+    veltufjarmunir = 5238734,
+    skammtimaskuldir = 8526054,
+)
+
+mosfellsbaer_2021 <- tibble(
+    ar = 2021,
+    sveitarfelag = "Mosfellsbær",
+    heildarskuldir = 18124135,
+    eignir = 23362212,
+    tekjur = 13543767,
+    gjold =  12872486 + 439988 + 849569,
+    eigid_fe = 5238077,
+    veltufjarmunir = 2430037,
+    skammtimaskuldir = 3160837,
+)
+```
+
+
+```{r}
+d <- efnahagur |> 
+    filter(hluti == "A_hluti") |> 
+    select(-tegund3, -hluti) |> 
+    pivot_wider(names_from = tegund2, values_from = total) |> 
+    inner_join(
+        rekstur |> 
+            filter(hluti == "A_hluti") |> 
+            select(-hluti) |> 
+            pivot_wider(names_from = tegund2, values_from = total),
+        by = c("ar", "sveitarfelag")
+    ) |> 
+    rowwise() |> 
+    mutate(heildarskuldir = sum(c_across(cols = c("Skuldbindingar", "Langtímaskuldir", "Skammtímaskuldir"))),
+           eignir = sum(c_across(cols = c("Varanlegir rekstrarfjármunir", "Áhættufjármunir og langtímakröfur", "Veltufjármunir")))) |> 
+    ungroup() |> 
+    select(ar, sveitarfelag, heildarskuldir, eignir, tekjur = "Tekjur", gjold = "Gjöld", eigid_fe = "Eigið fé", veltufjarmunir = "Veltufjármunir", skammtimaskuldir = "Skammtímaskuldir") |> 
+    bind_rows(
+        reykjavik_2021,
+        gardabaer_2021,
+        kopavogur_2021,
+        hafnarfjordur_2021,
+        mosfellsbaer_2021
+    ) |> 
+    mutate(skuldahlutf = heildarskuldir / tekjur,
+           veltufjarhlutf = veltufjarmunir / skammtimaskuldir,
+           eignahlutf = eignir / heildarskuldir,
+           rekstrarnidurstada = tekjur - gjold,
+           rekstrarnidurstada_hlutf = rekstrarnidurstada / tekjur)
+```
+
+
+```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_)) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = skuldahlutf,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y + 0,
+                         sveitarfelag == "Kópavogsbær" ~ y - 0.01,
+                         sveitarfelag == "Garðabær" ~ y + 0.01,
+                         sveitarfelag == "Reykjavíkurborg" ~ y + 0.01,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, skuldahlutf, col = sveitarfelag)) +
+    geom_hline(yintercept = 1, lty = 2) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(2010, 2023)) +
+    scale_y_continuous(breaks = c(range(plot_dat$skuldahlutf), 0.75, 1, 1.5, 2), 
+                       labels = label_percent(accuract = 1)) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Skuldir sveitafélaga sem hlutfall af árstekjum",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "skuldir_hlutfall_arstekjum.png",
+       width = 8, height = 0.5 * 8, scale = 2, bg = "white")
+```
+
+```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_)) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = heildarskuldir,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y ,
+                         sveitarfelag == "Kópavogsbær" ~ y - 1e6,
+                         sveitarfelag == "Garðabær" ~ y,
+                         sveitarfelag == "Reykjavíkurborg" ~ y,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y + 2e6,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, heildarskuldir, col = sveitarfelag)) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(2010, 2023.4)) +
+    scale_y_log10(breaks = c(range(plot_dat$heildarskuldir), 1e7, 3e7, 1e8, 3e8), 
+                       labels = label_number()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Heildarskuldir sveitarfélaga",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+
+p
+
+ggsave(plot = p,
+       filename = "heildarskuldir.png",
+       width = 8, height = 0.5 * 8, scale = 2, bg = "white")
+```
+
+
+```{r, fig.asp = 0.4, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_),
+           skuldaaukning = heildarskuldir / heildarskuldir[ar == 2018]) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = skuldaaukning,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y ,
+                         sveitarfelag == "Kópavogsbær" ~ y,
+                         sveitarfelag == "Garðabær" ~ y,
+                         sveitarfelag == "Reykjavíkurborg" ~ y,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2018)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, skuldaaukning, col = sveitarfelag)) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.02, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2018:2021, 
+                       limits = c(NA, 2021.4)) +
+    scale_y_continuous(breaks = c(range(plot_dat$skuldaaukning), 1.25, 1.5), 
+                       labels = label_percent()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2018",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "skuldaaukning.png",
+       width = 8, height = 0.4 * 8, scale = 2, bg = "white")
+```
+
+
+```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_)) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = veltufjarhlutf,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y + 0.06,
+                         sveitarfelag == "Kópavogsbær" ~ y - 0.013,
+                         sveitarfelag == "Garðabær" ~ y + 0.03,
+                         sveitarfelag == "Seltjarnarnesbær" ~ y + 0.02,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y - 0.05,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, veltufjarhlutf, col = sveitarfelag)) +
+    geom_hline(yintercept = 1, lty = 2) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(2010, 2023)) +
+    scale_y_continuous(breaks = c(range(plot_dat$veltufjarhlutf), 1, 2, 3), 
+                       labels = label_percent()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Veltufjármunir sveitarfélaga sem hlutfall af skammtímaskuldum",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "veltufjarhlutfall.png",
+       width = 8, height = 0.5 * 8, scale = 2, bg = "white")
+```
+
+
+```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_)) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = eignahlutf,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y - 0,
+                         sveitarfelag == "Kópavogsbær" ~ y - 0,
+                         sveitarfelag == "Garðabær" ~ y + 0.02,
+                         sveitarfelag == "Seltjarnarnesbær" ~ y - 0,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y + 0,
+                         sveitarfelag == "Reykjavíkurborg" ~ y - 0,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+p <- plot_dat |> 
+    ggplot(aes(ar, eignahlutf, col = sveitarfelag)) +
+    geom_hline(yintercept = 1, lty = 2) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(2010, 2023)) +
+    scale_y_continuous(breaks = c(range(plot_dat$eignahlutf), 1, 2, 3), 
+                       labels = label_percent()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Heildareignir sveitarfélaga sem hlutfall af heildarskuldum",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+
+p
+
+ggsave(plot = p,
+       filename = "eignir_vs_skuldir.png",
+       width = 8, height = 0.5 * 8, scale = 2, bg = "white")
+```
+
+
+
+```{r, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+plot_dat <- d |> 
+    group_by(sveitarfelag) |> 
+    mutate(label = ifelse(ar == max(ar), sveitarfelag, NA_character_)) |> 
+    ungroup() |> 
+    mutate(x = ar,
+           y = rekstrarnidurstada_hlutf,
+           y = case_when(sveitarfelag == "Mosfellsbær" ~ y - 0.005,
+                         sveitarfelag == "Kópavogsbær" ~ y + 0.005,
+                         sveitarfelag == "Garðabær" ~ y - 0.003,
+                         sveitarfelag == "Seltjarnarnesbær" ~ y,
+                         sveitarfelag == "Hafnarfjarðarkaupstaður" ~ y + 0.005,
+                         sveitarfelag == "Reykjavíkurborg" ~ y,
+                         TRUE ~ y)) |> 
+    filter(ar >= 2010)
+
+plot_dat |> 
+    ggplot(aes(ar, rekstrarnidurstada_hlutf, col = sveitarfelag)) +
+    geom_hline(yintercept = 0, lty = 2) +
+    geom_line() +
+    geom_point() +
+    geom_text(data = plot_dat |> group_by(sveitarfelag) |> filter(ar == max(ar)),
+              aes(label = label, x = x, y = y), nudge_x = 0.1, hjust = 0, size = 4) +
+    geom_rangeframe(col = "black") +
+    scale_x_continuous(breaks = 2010:2021, 
+                       limits = c(2010, 2023)) +
+    scale_y_continuous(breaks = c(range(plot_dat$rekstrarnidurstada_hlutf), 0, -0.05, 0.05, -0.1, 0.1), 
+                       labels = label_percent()) +
+    scale_colour_brewer(type = "qual", palette = "Dark2") +
+    theme_tufte() +
+    theme(legend.position = "none") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Rekstrarniðurstaða sveitarfélaga sem hlutfall af tekjum",
+         caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
+```
