@@ -257,7 +257,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Skuldir sveitafélaga sem hlutfall af árstekjum",
+         title = "Skuldir sveitafélaga sem hlutfall af árstekjum (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -302,7 +302,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Skuldir sveitafélaga á hvern íbúa",
+         title = "Skuldir sveitafélaga á hvern íbúa (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -345,7 +345,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Heildarskuldir sveitarfélaga",
+         title = "Heildarskuldir sveitarfélaga (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 
@@ -392,7 +392,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2018",
+         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2018 (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -436,7 +436,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2010",
+         title = "Hlutfallsleg aukning heildarskulda sveitarfélaga síðan 2010 (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -481,7 +481,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Veltufjármunir sveitarfélaga sem hlutfall af skammtímaskuldum",
+         title = "Veltufjármunir sveitarfélaga sem hlutfall af skammtímaskuldum (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -526,7 +526,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Heildareignir sveitarfélaga sem hlutfall af heildarskuldum",
+         title = "Heildareignir sveitarfélaga sem hlutfall af heildarskuldum (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -576,7 +576,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Rekstrarniðurstaða sveitarfélaga sem hlutfall af tekjum",
+         title = "Rekstrarniðurstaða sveitarfélaga sem hlutfall af tekjum (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -623,7 +623,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Framlegð sveitarfélaga sem hlutfall af tekjum",
+         title = "Framlegð sveitarfélaga sem hlutfall af tekjum (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
@@ -670,7 +670,7 @@ p <- plot_dat |>
     theme(legend.position = "none") +
     labs(x = NULL,
          y = NULL,
-         title = "Veltufé frá rekstri",
+         title = "Veltufé frá rekstri (A-hluti)",
          caption = "Kóði og gögn: https://github.com/bgautijonsson/arsreikningar_sveitarfelaga")
 
 p
