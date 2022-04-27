@@ -213,6 +213,8 @@ d <- efnahagur |>
            framlegd_hlutf = framlegd / tekjur) |> 
     inner_join(mannfjoldi,
                by = c("ar", "sveitarfelag"))
+
+d |> write_csv("arsreikningagogn.csv")
 ```
 
 ```{r}
